@@ -1,0 +1,147 @@
+package asb.java.vld.demo4.myClasses;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
+import java.util.Date;
+
+public class WorkDateInf {
+    private final Date nowTimeDateUtil;
+    private final Date lunchTimeDateUtil;
+    private final Date arrivalTimeDateUtil;
+    SimpleDateFormat stringParser;
+    private final long EVERY_DAY_YOU_NEED_TO_WORK = 32400000;
+    private final long EVERY_FRIDAY_YOU_NEED_TO_WORK = 27900000;
+
+
+    //"10:48:23" - example what you need to send in method
+    public WorkDateInf(String arrivalString) {
+        this.nowTimeDateUtil = getNowTimeDateUtil();
+        this.stringParser = new SimpleDateFormat();
+        stringParser.applyPattern("HH:mm:ss");
+        this.lunchTimeDateUtil=getTodayLunchTime();
+        try {
+            arrivalTimeDateUtil=getArrivalTimeDateUtil(arrivalString);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    private Date getTodayLunchTime()
+    {
+        Date todayLunchTime =getNowTimeDateUtil();
+        todayLunchTime.setHours(12);
+        todayLunchTime.setMinutes(30);
+        todayLunchTime.setSeconds(0);
+        return todayLunchTime;
+    }
+    public void showInfoAboutThisDay() {
+        try {
+            exitTimeInfoShowing();
+            remainingTimeInfoShowing();
+            beforeLunchTimeInfoShowing();
+            nowTimeInfoShowing();
+            arrivalTimeInfoShowing();
+
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public void remainingTimeInfoShowing() throws ParseException {
+        long exitDateUtil = arrivalTimeDateUtil.getTime() + getTodayWorkTime();
+        Date differenceBetweenNowAndLeaving = new Date(exitDateUtil - nowTimeDateUtil.getTime());
+        if (differenceBetweenNowAndLeaving.getTime()<0){
+            System.out.println("пора домой");
+            System.exit(0);
+        }
+
+        printRemainingTime(differenceBetweenNowAndLeaving);
+    }
+    private void printRemainingTime(Date remainingTime) {
+        printTime("Оставшееся время", remainingTime.getHours() - 3,remainingTime.getMinutes(),remainingTime.getSeconds());
+    }
+
+
+    public void beforeLunchTimeInfoShowing() throws ParseException {
+        long timeBeforeLunchLong=lunchTimeDateUtil.getTime()-nowTimeDateUtil.getTime();
+        if (timeBeforeLunchLong<0) {System.out.println("Время до обеда: обед уже был");}
+        else{
+            Date differenceBetweenNowAndLunch=new Date(timeBeforeLunchLong);
+            printBeforeLunchTime(differenceBetweenNowAndLunch);
+        }
+
+    }
+    private void printBeforeLunchTime(Date remainingTime) {
+        printTime("Время до обеда", remainingTime.getHours() - 3,remainingTime.getMinutes(),remainingTime.getSeconds());
+    }
+
+
+    public void exitTimeInfoShowing() throws ParseException {
+        Date sumOfArrivalAndWorkTime = new Date(arrivalTimeDateUtil.getTime() + getTodayWorkTime());
+        printExitTime(sumOfArrivalAndWorkTime);
+    }
+    private void printExitTime(Date sumOfArrivalAndWorkTime){
+        printTime("Время выхода",sumOfArrivalAndWorkTime.getHours(),sumOfArrivalAndWorkTime.getMinutes(),sumOfArrivalAndWorkTime.getSeconds());
+    }
+
+
+    public void nowTimeInfoShowing() throws ParseException {
+        printNowTime(nowTimeDateUtil);
+    }
+    private void printNowTime(Date nowTime){
+        printTime("Сейчас",nowTime.getHours(),nowTime.getMinutes(), nowTime.getSeconds());
+    }
+
+
+    public void arrivalTimeInfoShowing() throws ParseException {
+        printArrivalTime(arrivalTimeDateUtil);
+    }
+    private void printArrivalTime(Date timeDate){
+        printTime("Прибыл в",timeDate.getHours(),timeDate.getMinutes(),timeDate.getSeconds());
+    }
+
+
+    void printTime(String prefix,int hours,int minutes,int seconds)
+    {
+        StringBuffer outputString = new StringBuffer(prefix+": " + hours + ":");
+
+        if (minutes < 10) {
+            outputString.append("0").append(minutes);
+        } else {
+            outputString.append(minutes);
+        }
+
+        if (seconds < 10) {
+            outputString.append(":0").append(seconds);
+        } else {
+            outputString.append(":").append(seconds);
+        }
+
+        System.out.println(outputString);
+    }
+    private long getTodayWorkTime() {
+        LocalDateTime localCurrentTime = LocalDateTime.now();
+        if (localCurrentTime.getDayOfWeek() == DayOfWeek.FRIDAY) {
+            return EVERY_FRIDAY_YOU_NEED_TO_WORK;
+        } else {
+            return EVERY_DAY_YOU_NEED_TO_WORK;
+        }
+    }
+    private Date getArrivalTimeDateUtil(String arrivalString) throws ParseException {
+        Date arrivalTimeDateUtil=stringParser.parse(arrivalString);
+        arrivalTimeDateUtil.setYear(nowTimeDateUtil.getYear());
+        arrivalTimeDateUtil.setMonth(nowTimeDateUtil.getMonth());
+        arrivalTimeDateUtil.setDate(nowTimeDateUtil.getDate());
+        return arrivalTimeDateUtil;
+    }
+
+    private Date getNowTimeDateUtil() {
+        LocalDateTime localCurrentTime = LocalDateTime.now();
+        return java.sql.Timestamp.valueOf(localCurrentTime);
+    }
+
+}
